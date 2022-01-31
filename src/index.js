@@ -3,10 +3,18 @@ import ReactDOM from 'react-dom';
 import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
+import Mantenedor from './components/Mantenedor';
+import Pantalla from './components/Pantalla';
+
 
 ReactDOM.render(
   <React.StrictMode>
-    <App />
+
+    {/* <Mantenedor /> */}
+    <Pantalla/>
+    {/* <Calle/> */}
+    {/* <App /> */}
+    {/* <Region/> */}
   </React.StrictMode>,
   document.getElementById('root')
 );
