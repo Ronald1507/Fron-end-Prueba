@@ -12,17 +12,25 @@ import FormControl from '@mui/material/FormControl';
 import Paper from '@mui/material/Paper';
 import Table from '@mui/material/Table';
 import Autocomplete from '@mui/material/Autocomplete';
+import InputLabel from '@mui/material/InputLabel';
+import Select from '@mui/material/Select';
 
 const theme = createTheme();
 
 export default function Mantenedor() {   
 
     const [accion, setAccion] = useState("Registrar");
-    const [idCalle, setIdCalle] = useState([]);
+    const [id_calle, setid_calle] = useState([]);
+
+    const [regiones, setRegiones] = useState([]);
+    const [regionLbl, setRegionLbl] = useState("Region");
+    const [provinciaLbl, setProvinciaLbl] = useState("Provincia");
+    const [comunaLbl, setComunaLbl] = useState("Comuna");
 
     const [region, setRegion] = useState([]);
     const [provincia, setProvincia] = useState([]);
     const [comuna, setComuna] = useState([]);
+
     const [calle, setCalle] = useState("");
     const [recibirComuna, setRecibirComuna] = useState([]);
     const [datos, setDatos] = useState([]);
@@ -49,8 +57,8 @@ export default function Mantenedor() {
         console.log(options)
     }
     useEffect(()=>{
-        peticionRegiones().then((datos)=>{
-          setRegion(datos)                
+        peticionRegiones().then((datosR)=>{
+          setRegiones(datosR)                
         })              
     },[])
 
@@ -59,7 +67,7 @@ export default function Mantenedor() {
       ListarCalles()  
     },[])
 
-    const buscaProvincia = async (idRegion , value) =>{
+    const buscaProvincia = async (idRegion , value) =>{        
         console.log(value.id)                                      
         const ans = await axios
         .get("http://127.0.0.1:8000/api/provinciasRegion/"+value.id)
@@ -82,7 +90,7 @@ export default function Mantenedor() {
         })
         return options        
     }
-    const buscaComuna = async (idProvincia, value) => {
+    const buscaComuna = async (idProvincia, value) => {      
         console.log(value.id)
         const ans = await axios
         .get("http://127.0.0.1:8000/api/comunasProvincia/"+value.id)
@@ -111,15 +119,15 @@ export default function Mantenedor() {
         if(accion == "Registrar"){
           if(calle ==""|| calle==="") {
             alert("Complete el campo nombre")            
-          }                
+          }                          
         //   console.log("guardando")
         //   console.log(recibirComuna)
         // console.log(calle)  
         else{     
         axios
-        .post("http://127.0.0.1:8000/api/calles" ,{
+        .post("http://127.0.0.1:8000/api/calle" ,{
             nombre_calle:calle,
-            id:recibirComuna
+            id_comuna:recibirComuna
         })
         .then((response)=>{
             // console.log("correcto")
@@ -127,6 +135,8 @@ export default function Mantenedor() {
             if (response.status == 200){
               alert("Calle Registrada")
               ListarCalles()
+              
+              window.location.reload()       
             }
         })
         .catch(error=>{
@@ -136,20 +146,22 @@ export default function Mantenedor() {
         }
 
         if(accion =="Modificar"){
-          console.log(calle)
-          console.log(idCalle)
+          // console.log("aparte-----")
+          // console.log(calle)
+          // console.log(id_calle)
+        // console.log(recibirComuna)
           axios
-          .put("http://127.0.0.1:8000/api/calleComuna/"+idCalle,{
+          .put("http://127.0.0.1:8000/api/calle/"+id_calle,{
             nombre_calle: calle,
-            id: idCalle
+            id_comuna: recibirComuna
           })
           .then((response)=>{
             if(response.status==200){
               alert("Modificado")
-              ListarCalles();
-              mostrar()
-              setCalle("")
+              ListarCalles();              
+              // setCalle("")              
               setAccion("Registrar")
+              window.location.reload()
             }
           },
           (error)=>{
@@ -163,23 +175,22 @@ export default function Mantenedor() {
 
     const ListarCalles = () => {
       axios
-      .get("http://127.0.0.1:8000/api/calleComuna")
+      .get("http://127.0.0.1:8000/api/calles")
       .then(
         (response) => {                
-          setDatos(response.data);          
+          setDatos(response.data);   
+          // console.log(response.data)                 
         },  
         (error) => {          
           console.log(error)
         }
       );
     };
-const Eliminar = (item) =>{
-  // console.log(item.id)    
-  let confirmacion = window.confirm("¿Desea eliminar la calle " +item.nombre_calle+ " de " + item.nombre_comuna+ "?")
-  
+const Eliminar = (item) =>{      
+  let confirmacion = window.confirm("¿Desea eliminar la calle " +item.nombre_calle+ " de " + item.nombre_comuna+ "?")  
   if (confirmacion==true){    
     axios
-      .delete("http://127.0.0.1:8000/api/calleComuna/"+item.id)
+      .delete("http://127.0.0.1:8000/api/calle/"+item.id_calle)
       .then(
         (response) => {
           if (response.status == 200) {
@@ -196,23 +207,11 @@ const Eliminar = (item) =>{
   }  
 }
 
-function mostrar(){
-  document.getElementById('formControl1').style .display = 'block';
-  document.getElementById('formControl2').style .display = 'block';
-  document.getElementById('formControl3').style .display = 'block';
-}
-  function ocultarSelect(){
-  document.getElementById('formControl1').style .display = 'none';
-  document.getElementById('formControl2').style .display = 'none';
-  document.getElementById('formControl3').style .display = 'none';
-}
-
-
   return (
     <ThemeProvider theme={theme}>
       <Container component="main" fullWidth>
         <CssBaseline />
-        <Box
+        <Box id="form-crear"
           sx={{
             marginTop: 8,
             display: 'flex',
@@ -236,19 +235,26 @@ function mostrar(){
               autoFocus
               value={calle}
               onChange={ (e) => {setCalle(e.target.value)}}
-            />
+            />            
 
           <FormControl id="formControl1"fullWidth sx={{marginTop:3, ml:2  }}>
-              <Autocomplete
-              fullWidth
-                onChange={buscaProvincia}                
+              <Autocomplete              
+              fullWidth              
+                onChange={buscaProvincia}                                               
                 id="combo-box-demo"
-                options={region}
+                options={regiones}
                 getOptionLabel={(region)=> region.nombre_region}
                 sx={{ width: 600 }}
-                renderInput={(params) => <TextField {...params} label="Región" required/>}
+                renderInput={(params1) => 
+                  <TextField {...params1} label={regionLbl} 
+                  onClick={()=> { setRegionLbl("Region");
+                                  setProvinciaLbl("Provincia"); 
+                                  setComunaLbl("Comuna")}}
+                  required/>
+                }
               />
-            </FormControl>
+          </FormControl>
+
             <FormControl id="formControl2"fullWidth sx={{marginTop:3, ml:2  }}>
             <Autocomplete
               onChange={buscaComuna}              
@@ -256,7 +262,7 @@ function mostrar(){
               options={provincia}
               getOptionLabel={(provincia)=> provincia.nombre_provincia}
               sx={{ width: 600 }}
-              renderInput={(params) => <TextField {...params} label="Provincia" />}
+              renderInput={(params2) => <TextField {...params2} label={provinciaLbl} />}
             />
             </FormControl>
             <FormControl id="formControl3"fullWidth sx={{marginTop:3, ml:2  }}>
@@ -269,7 +275,7 @@ function mostrar(){
               options={comuna}
               getOptionLabel={(comuna)=> comuna.nombre_comuna}
               sx={{ width: 600 }}
-              renderInput={(params) => <TextField {...params} label="Comunas" />}
+              renderInput={(params3) => <TextField {...params3} label={comunaLbl} />}
             />
             </FormControl>
             </Container>
@@ -277,7 +283,11 @@ function mostrar(){
             <Button                         
               variant="contained"
               sx={{mt:4, ml:34}}              
-              onClick={insertarCalle}              
+              // onClick={insertarCalle}              
+              onClick={()=>{insertarCalle()
+                setRegionLbl("Region");
+                setProvinciaLbl("Provincia"); 
+                setComunaLbl("Comuna")}}              
             >
               {accion}
             </Button>           
@@ -299,26 +309,39 @@ function mostrar(){
       
           <TableBody>
           { datos.map((dato)=>(
-             <TableRow key={dato.id}>
+             <TableRow key={dato.id_calle}>
               <TableCell >{dato.nombre_calle}</TableCell>
               <TableCell >{dato.nombre_comuna}</TableCell>
               <TableCell >{dato.nombre_provincia}</TableCell>
               <TableCell >{dato.nombre_region}</TableCell>
               <TableCell>
-                <Button 
-                  variant="contained" 
+                
+                <Button
+                  variant="contained"
                   onClick={()=>{
-                    // console.log(dato)
-                    setCalle(dato.nombre_calle)
-                    setIdCalle(dato.id_calle)
-                    console.log(dato)
-                    // setRegion(dato.nombre_region)
-                    // setComuna(dato.nombre_comuna)
-                    setAccion("Modificar")
-                    ocultarSelect()
-                }}
-                  >Modificar
+                  // ocultarSelect()
+                  // mostrar()
+                  setid_calle(dato.id_calle)
+                  console.log(dato.id_calle)
+
+                  setCalle(dato.nombre_calle)
+                  console.log(dato.nombre_calle)
+
+                  setComunaLbl(dato.nombre_comuna)
+                  console.log(dato.nombre_comuna)
+                  
+                  setProvinciaLbl(dato.nombre_provincia)
+                  console.log(dato.nombre_provincia)
+
+                  setRegionLbl(dato.nombre_region)
+                  console.log(dato.nombre_region)
+
+                  setAccion("Modificar")
+                }}>
+                  Modificar
                 </Button>
+
+
                 <span> </span>
                 <Button variant="contained" color="error" onClick={()=>Eliminar(dato)}>Eliminar</Button>
               </TableCell>
